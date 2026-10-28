@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chrome Browser Simulator</title>
+  <style>
+    :root {
+      --bg-color: #dee1e6;
+      --tab-bg: #e3e6ea;
+      --tab-active-bg: #ffffff;
+      --tab-hover-bg: #ebebeb;
+      --toolbar-bg: #ffffff;
+      --border-color: #cccccc;
+      --text-color: #3c4043;
+      --accent-color: #1a73e8;
+      --btn-hover: #f1f3f4;
+    }
+
+    [data-theme="dark"] {
+      --bg-color: #202124;
+      --tab-bg: #292a2d;
+      --tab-active-bg: #323639;
+      --tab-hover-bg: #2f3235;
+      --toolbar-bg: #323639;
+      --border-color: #4a4d51;
+      --text-color: #e8eaed;
+      --accent-color: #8ab4f8;
+      --btn-hover: #3c4043;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      background-color: #111;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Window Frame */
+    .browser-window {
+      width: 95vw;
+      height: 90vh;
+      background-color: var(--bg-color);
+      border-radius: 10px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      border: 1px solid var(--border-color);
+    }
+
+    /* Top Bar: Tabs & Controls */
+    .top-bar {
+      display: flex;
+      align-items: center;
+      padding-top: 8px;
+      padding-left: 10px;
+      padding-right: 10px;
+      background-color: var(--bg-color);
+      height: 42px;
+      position: relative;
+    }
+
+    .tabs-container {
+      display: flex;
+      align-items: flex-end;
+      flex: 1;
+      overflow-x: auto;
+      height: 100%;
+      scroll-behavior: smooth;
+    }
+
+    .tabs-container::-webkit-scrollbar {
+      display: none;
+    }
+
+    .tab {
+      display: flex;
+      align-items: center;
+      width: 200px;
+      max-width: 240px;
+      min-width: 120px;
+      height: 34px;
+      background-color: var(--tab-bg);
+      border-top-left-radius: 8px;
+      border-top-right-radius: 8px;
+      padding: 0 10px;
+      margin-right: 4px;
+      font-size: 12px;
+      color: var(--text-color);
+      cursor: pointer;
+      position: relative;
+      transition: background-color 0.15s ease;
+    }
+
+    .tab:hover {
+      background-color: var(--tab-hover-bg);
+    }
+
+    .tab.active {
+      background-color: var(--tab-active-bg);
+      font-weight: 500;
+    }
+
+    .tab-favicon {
+      width: 16px;
+      height: 16px;
+      margin-right: 8px;
+      border-radius: 2px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+    }
+
+    .tab-title {
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .tab-close {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      margin-left: 4px;
+      color: #777;
+    }
+
+    .tab-close:hover {
+      background-color: rgba(0, 0, 0, 0.1);
+      color: var(--text-color);
+    }
+
+    .add-tab-btn {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      color: var(--text-color);
+      cursor: pointer;
+      margin-bottom: 3px;
+      margin-left: 4px;
+    }
+
+    .add-tab-btn:hover {
+      background-color: var(--btn-hover);
+    }
+
+    .window-controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-left: 10px;
+      padding-bottom: 6px;
+    }
+
+    .win-btn {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+
+    .win-close { background-color: #ff5f56; }
+    .win-min { background-color: #ffbd2e; }
+    .win-max { background-color: #27c93f; }
+
+    /* Navigation / Address Bar Toolbar */
+    .toolbar {
+      display: flex;
+      align-items: center;
+      background-color: var(--toolbar-bg);
+      padding: 6px 10px;
+      gap: 8px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .nav-btn {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: var(--text-color);
+      font-size: 14px;
+      border: none;
+      background: transparent;
+    }
+
+    .nav-btn:hover {
+      background-color: var(--btn-hover);
+    }
+
+    .address-bar {
+      flex: 1;
+      height: 32px;
+      background-color: var(--bg-color);
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      padding: 0 14px;
+      gap: 8px;
+      border: 1px solid transparent;
+      transition: border 0.2s, background-color 0.2s;
+    }
+
+    .address-bar:focus-within {
+      background-color: var(--toolbar-bg);
+      border-color: var(--accent-color);
+      box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2);
+    }
+
+    .address-input {
+      width: 100%;
+      border: none;
+      background: transparent;
+      outline: none;
+      font-size: 13px;
+      color: var(--text-color);
+      user-select: text;
+    }
+
+    .lock-icon {
+      font-size: 12px;
+      color: #5f6368;
+    }
+
+    /* Content Area (iframes) */
+    .content-area {
+      flex: 1;
+      position: relative;
+      background-color: #ffffff;
+    }
+
+    .tab-frame {
+      width: 100%;
+      height: 100%;
+      border: none;
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+
+    .tab-frame.active {
+      display: block;
+    }
+
+    /* Custom New Tab Page */
+    .new-tab-page {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background-color: var(--toolbar-bg);
+      color: var(--text-color);
+      padding: 20px;
+    }
+
+    .google-logo {
+      font-size: 64px;
+      font-weight: bold;
+      letter-spacing: -2px;
+      margin-bottom: 24px;
+    }
+
+    .g-blue { color: #4285f4; }
+    .g-red { color: #ea4335; }
+    .g-yellow { color: #fbbc05; }
+    .g-green { color: #34a853; }
+
+    .ntp-search {
+      width: 100%;
+      max-width: 560px;
+      height: 44px;
+      border-radius: 24px;
+      border: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      box-shadow: 0 1px 6px rgba(32, 33, 36, 0.1);
+      margin-bottom: 30px;
+    }
+
+    .ntp-search input {
+      flex: 1;
+      border: none;
+      outline: none;
+      background: transparent;
+      font-size: 15px;
+      color: var(--text-color);
+      margin-left: 10px;
+      user-select: text;
+    }
+
+    .shortcuts {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .shortcut {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      cursor: pointer;
+      width: 80px;
+    }
+
+    .shortcut-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background-color: var(--bg-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      margin-bottom: 8px;
+      transition: background-color 0.2s;
+    }
+
+    .shortcut:hover .shortcut-icon {
+      background-color: var(--btn-hover);
+    }
+
+    .shortcut-title {
+      font-size: 12px;
+      text-align: center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="browser-window">
+    <!-- Top Bar -->
+    <div class="top-bar">
+      <div class="tabs-container" id="tabs-container"></div>
+      <div class="add-tab-btn" onclick="createNewTab()" title="New Tab">+</div>
+      <div class="window-controls">
+        <div class="win-btn win-min" title="Minimize"></div>
+        <div class="win-btn win-max" title="Maximize"></div>
+        <div class="win-btn win-close" title="Close"></div>
+      </div>
+    </div>
+
+    <!-- Navigation Bar -->
+    <div class="toolbar">
+      <button class="nav-btn" onclick="goBack()" title="Back">&#x21E6;</button>
+      <button class="nav-btn" onclick="goForward()" title="Forward">&#x21E8;</button>
+      <button class="nav-btn" onclick="reloadTab()" title="Reload">&#x21BB;</button>
+      
+      <div class="address-bar">
+        <span class="lock-icon">&#128274;</span>
+        <input type="text" class="address-input" id="address-input" placeholder="Search Google or type a URL">
+      </div>
+
+      <button class="nav-btn" onclick="toggleTheme()" title="Toggle Dark/Light Mode">&#9788;</button>
+    </div>
+
+    <!-- Web Page Area -->
+    <div class="content-area" id="content-area"></div>
+  </div>
+
+  <script>
+    let tabs = [];
+    let activeTabId = null;
+
+    const tabsContainer = document.getElementById('tabs-container');
+    const contentArea = document.getElementById('content-area');
+    const addressInput = document.getElementById('address-input');
+
+    // Preset shortcuts for New Tab Page
+    const presetShortcuts = [
+      { name: 'Wikipedia', url: 'https://www.wikipedia.org', icon: '🌐' },
+      { name: 'Bing', url: 'https://www.bing.com', icon: '🔍' },
+      { name: 'Archive.org', url: 'https://archive.org', icon: '🏛️' },
+      { name: 'HTML5 Games', url: 'https://html5games.com', icon: '🎮' }
+    ];
+
+    function createNewTab(url = '') {
+      const tabId = 'tab-' + Date.now();
+      const tabData = {
+        id: tabId,
+        url: url,
+        title: url ? formatTitleFromUrl(url) : 'New Tab',
+        history: url ? [url] : [],
+        historyIndex: url ? 0 : -1
+      };
+
+      tabs.push(tabData);
+
+      // Create Tab UI Element
+      const tabEl = document.createElement('div');
+      tabEl.className = 'tab';
+      tabEl.id = `tab-btn-${tabId}`;
+      tabEl.onclick = (e) => {
+        if (!e.target.classList.contains('tab-close')) {
+          switchTab(tabId);
+        }
+      };
+
+      tabEl.innerHTML = `
+        <span class="tab-favicon" id="favicon-${tabId}">📄</span>
+        <span class="tab-title" id="title-${tabId}">${tabData.title}</span>
+        <span class="tab-close" onclick="closeTab('${tabId}', event)">×</span>
+      `;
+      tabsContainer.appendChild(tabEl);
+
+      // Create Content (Iframe or NTP)
+      const frameContainer = document.createElement('div');
+      frameContainer.className = 'tab-frame';
+      frameContainer.id = `frame-${tabId}`;
+
+      if (url) {
+        frameContainer.innerHTML = `<iframe src="${url}" style="width:100%; height:100%; border:none;"></iframe>`;
+      } else {
+        frameContainer.appendChild(createNewTabPageHtml(tabId));
+      }
+
+      contentArea.appendChild(frameContainer);
+      switchTab(tabId);
+    }
+
+    function switchTab(tabId) {
+      activeTabId = tabId;
+      const tabData = tabs.find(t => t.id === tabId);
+
+      document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.tab-frame').forEach(el => el.classList.remove('active'));
+
+      document.getElementById(`tab-btn-${tabId}`).classList.add('active');
+      document.getElementById(`frame-${tabId}`).classList.add('active');
+
+      addressInput.value = tabData.url;
+    }
+
+    function closeTab(tabId, event) {
+      if (event) event.stopPropagation();
+
+      const index = tabs.findIndex(t => t.id === tabId);
+      if (index === -1) return;
+
+      document.getElementById(`tab-btn-${tabId}`).remove();
+      document.getElementById(`frame-${tabId}`).remove();
+      tabs.splice(index, 1);
+
+      if (tabs.length === 0) {
+        createNewTab();
+      } else if (activeTabId === tabId) {
+        const nextTab = tabs[Math.max(0, index - 1)];
+        switchTab(nextTab.id);
+      }
+    }
+
+    function navigateTab(tabId, url) {
+      let finalUrl = url.trim();
+
+      // Ensure proper protocol
+      if (!/^https?:\/\//i.test(finalUrl)) {
+        if (finalUrl.includes('.') && !finalUrl.includes(' ')) {
+          finalUrl = 'https://' + finalUrl;
+        } else {
+          // Fallback search engine (DuckDuckGo works inside iframe without strict headers)
+          finalUrl = `https://duckduckgo.com/?q=${encodeURIComponent(finalUrl)}`;
+        }
+      }
+
+      const tabData = tabs.find(t => t.id === tabId);
+      tabData.url = finalUrl;
+      tabData.title = formatTitleFromUrl(finalUrl);
+
+      // Update UI
+      document.getElementById(`title-${tabId}`).innerText = tabData.title;
+      if (tabId === activeTabId) {
+        addressInput.value = finalUrl;
+      }
+
+      const frameContainer = document.getElementById(`frame-${tabId}`);
+      frameContainer.innerHTML = `<iframe src="${finalUrl}" style="width:100%; height:100%; border:none;"></iframe>`;
+    }
+
+    function createNewTabPageHtml(tabId) {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'new-tab-page';
+
+      wrapper.innerHTML = `
+        <div class="google-logo">
+          <span class="g-blue">G</span><span class="g-red">o</span><span class="g-yellow">o</span><span class="g-blue">g</span><span class="g-green">l</span><span class="g-red">e</span>
+        </div>
+        <div class="ntp-search">
+          <span>🔍</span>
+          <input type="text" placeholder="Search Web or type a URL" onkeydown="if(event.key==='Enter') navigateTab('${tabId}', this.value)">
+        </div>
+        <div class="shortcuts">
+          ${presetShortcuts.map(s => `
+            <div class="shortcut" onclick="navigateTab('${tabId}', '${s.url}')">
+              <div class="shortcut-icon">${s.icon}</div>
+              <div class="shortcut-title">${s.name}</div>
+            </div>
+          `).join('')}
+        </div>
+      `;
+      return wrapper;
+    }
+
+    function formatTitleFromUrl(url) {
+      try {
+        const parsed = new URL(url);
+        return parsed.hostname.replace('www.', '');
+      } catch {
+        return url;
+      }
+    }
+
+    // Address Bar Enter Handler
+    addressInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && activeTabId) {
+        navigateTab(activeTabId, addressInput.value);
+      }
+    });
+
+    // Control buttons
+    function reloadTab() {
+      if (!activeTabId) return;
+      const tabData = tabs.find(t => t.id === activeTabId);
+      if (tabData.url) navigateTab(activeTabId, tabData.url);
+    }
+
+    function goBack() {
+      alert("Browser Back navigation simulated.");
+    }
+
+    function goForward() {
+      alert("Browser Forward navigation simulated.");
+    }
+
+    function toggleTheme() {
+      const isDark = document.body.getAttribute('data-theme') === 'dark';
+      document.body.setAttribute('data-theme', isDark ? 'light' : 'dark');
+    }
+
+    // Initialize with first tab
+    createNewTab();
+  </script>
+</body>
+</html>
